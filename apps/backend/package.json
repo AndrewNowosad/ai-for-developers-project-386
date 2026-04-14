@@ -1,5 +1,30 @@
 {
   "name": "@booking/backend",
   "version": "0.1.0",
-  "private": true
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:generate": "prisma generate",
+    "db:seed": "tsx src/seed.ts",
+    "db:setup": "prisma migrate dev && tsx src/seed.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "^9.0.0",
+    "@prisma/client": "^5.22.0",
+    "dotenv": "^16.4.0",
+    "fastify": "^4.28.0",
+    "luxon": "^3.5.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.4.0",
+    "prisma": "^5.22.0",
+    "tsx": "^4.19.0",
+    "typescript": "~5.5.0"
+  }
 }

@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Calendar {
+  id                Int                @id @default(autoincrement())
+  slug              String             @unique
+  name              String
+  timezone          String
+  createdAt         DateTime           @default(now()) @map("created_at")
+  availabilityRules AvailabilityRule[]
+  slotDurations     SlotDuration[]
+  bookings          Booking[]
+
+  @@map("calendars")
+}
+
+model AvailabilityRule {
+  id         Int      @id @default(autoincrement())
+  calendarId Int      @map("calendar_id")
+  weekdays   Int[]
+  startTime  String   @map("start_time")
+  endTime    String   @map("end_time")
+  calendar   Calendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+
+  @@map("availability_rules")
+}
+
+model SlotDuration {
+  id         Int      @id @default(autoincrement())
+  calendarId Int      @map("calendar_id")
+  minutes    Int
+  calendar   Calendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+
+  @@unique([calendarId, minutes])
+  @@map("slot_durations")
+}
+
+enum BookingStatus {
+  confirmed
+  cancelled
+}
+
+model Booking {
+  id         Int           @id @default(autoincrement())
+  calendarId Int           @map("calendar_id")
+  guestName  String        @map("guest_name")
+  guestEmail String        @map("guest_email")
+  note       String?
+  startsAt   DateTime      @map("starts_at") @db.Timestamptz(6)
+  endsAt     DateTime      @map("ends_at") @db.Timestamptz(6)
+  status     BookingStatus @default(confirmed)
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  calendar   Calendar      @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+
+  @@map("bookings")
+}

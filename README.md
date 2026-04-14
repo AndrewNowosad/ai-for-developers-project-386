@@ -10,8 +10,8 @@ Monorepo managed with **pnpm workspaces**:
 | Package | Description |
 | --- | --- |
 | `packages/api-spec` | TypeSpec API contract → OpenAPI 3.0 |
-| `apps/backend` | Fastify + Prisma + PostgreSQL _(coming soon)_ |
-| `apps/frontend` | React + Mantine + Vite _(coming soon)_ |
+| `apps/backend` | Fastify + Prisma + PostgreSQL |
+| `apps/frontend` | React + Mantine + Vite |
 
 ## Tech Stack
 
@@ -92,6 +92,7 @@ Run `pnpm build` inside that package to emit `openapi.yaml`.
 
 - Node.js 20+
 - pnpm 9+
+- PostgreSQL 14+ (for the `btree_gist` extension needed by the booking overlap constraint)
 
 ### Install dependencies
 
@@ -105,4 +106,35 @@ pnpm install
 cd packages/api-spec
 pnpm build
 # outputs packages/api-spec/openapi.yaml
+```
+
+### Run the backend
+
+```sh
+cd apps/backend
+
+# 1. Copy and fill in the environment variables
+cp .env.example .env
+# Edit .env — set DATABASE_URL to your PostgreSQL connection string
+
+# 2. Run migrations (creates tables + overlap EXCLUDE constraint)
+pnpm db:migrate
+
+# 3. Seed a demo calendar (slug: "demo", Mon–Fri 09–17 + Sat 10–14, 15 & 30 min slots)
+pnpm db:seed
+
+# 4. Start the dev server (http://localhost:3000)
+pnpm dev
+```
+
+### Run the frontend
+
+```sh
+cd apps/frontend
+
+# Against the real backend
+pnpm dev
+
+# Against MSW mocks (no backend needed)
+pnpm dev:mock
 ```

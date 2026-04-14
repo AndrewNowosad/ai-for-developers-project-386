@@ -10,6 +10,6 @@
     "pnpm": ">=9"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "msw"]
+    "onlyBuiltDependencies": ["esbuild", "msw", "@prisma/client", "@prisma/engines", "prisma"]
   }
 }
