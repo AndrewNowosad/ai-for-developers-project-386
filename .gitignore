@@ -28,6 +28,10 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Playwright
+apps/e2e/playwright-report/
+apps/e2e/test-results/
+
 # Editors
 .vscode/
 .idea/

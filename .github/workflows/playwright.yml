@@ -1,0 +1,63 @@
+name: E2E Tests (Playwright)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @booking/e2e exec playwright install --with-deps chromium
+
+      # Start only the backend services (DB + migrations + Fastify).
+      # The Playwright webServer config starts the Vite dev server.
+      - name: Start backend services
+        run: docker compose up -d db migrate backend
+
+      - name: Wait for backend API to be ready
+        run: |
+          echo "Waiting for backend…"
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/api/manage > /dev/null 2>&1; then
+              echo "Backend is ready after ${i} attempts."
+              exit 0
+            fi
+            echo "  attempt $i/30 – retrying in 3 s"
+            sleep 3
+          done
+          echo "ERROR: backend did not become ready in time."
+          docker compose logs backend
+          exit 1
+
+      - name: Run Playwright tests
+        run: pnpm e2e
+        env:
+          CI: 'true'
+          BACKEND_URL: 'http://localhost:3000'
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/e2e/playwright-report/
+          retention-days: 7

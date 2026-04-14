@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "pnpm -r build",
+    "e2e": "pnpm --filter @booking/e2e test",
     "docker:build": "docker compose build",
     "docker:build-fresh": "docker compose build --no-cache",
     "docker:up": "docker compose up -d",

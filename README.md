@@ -12,6 +12,7 @@ Monorepo managed with **pnpm workspaces**:
 | `packages/api-spec` | TypeSpec API contract → OpenAPI 3.0 |
 | `apps/backend` | Fastify + Prisma + PostgreSQL |
 | `apps/frontend` | React + Mantine + Vite |
+| `apps/e2e` | Playwright end-to-end tests |
 
 ## Tech Stack
 
@@ -23,6 +24,7 @@ Monorepo managed with **pnpm workspaces**:
 | Frontend | React, Mantine UI, Vite |
 | Database | PostgreSQL 18 |
 | Container runtime | Docker Compose |
+| E2E tests | Playwright |
 | Package manager | pnpm workspaces |
 
 ## Domain Model
@@ -154,3 +156,28 @@ cd apps/frontend
 pnpm dev               # against real backend
 pnpm dev:mock          # against MSW mocks (no backend needed)
 ```
+
+## End-to-end Tests
+
+Tests run against a live stack (backend + PostgreSQL) and a Vite dev server
+started automatically by Playwright.
+
+```sh
+# 1. Start the backend services (DB, migrations, API)
+pnpm docker:dev
+
+# 2. Run all 25 Playwright tests (Chromium only)
+pnpm e2e
+```
+
+An HTML report is written to `apps/e2e/playwright-report/` after every run.
+
+### CI
+
+The GitHub Actions workflow (`.github/workflows/playwright.yml`) runs on
+every push and pull request:
+
+1. Spins up `db`, `migrate`, and `backend` via Docker Compose.
+2. Waits for `http://localhost:3000/api/manage` to respond.
+3. Runs `pnpm e2e` — Playwright starts the Vite dev server automatically.
+4. Uploads the HTML report as a workflow artifact (retained 7 days).
