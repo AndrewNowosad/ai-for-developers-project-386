@@ -22,6 +22,7 @@ import {
   Text,
   Title,
 } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { TimeInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
@@ -266,6 +267,7 @@ function SlotDurationsPanel({
 function BookingsPanel({ slug, timezone }: Readonly<{ slug: string; timezone: string }>) {
   const [statusFilter, setStatusFilter] = useState<BookingStatus | 'all'>('all');
   const queryClient = useQueryClient();
+  const isMobile = useMediaQuery('(max-width: 600px)');
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['bookings', slug, statusFilter],
@@ -309,51 +311,86 @@ function BookingsPanel({ slug, timezone }: Readonly<{ slug: string; timezone: st
       )}
 
       {bookings && bookings.length > 0 && (
-        <Table striped highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Guest</Table.Th>
-              <Table.Th>Email</Table.Th>
-              <Table.Th>Time</Table.Th>
-              <Table.Th>Status</Table.Th>
-              <Table.Th />
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
+        isMobile ? (
+          <Stack gap="sm">
             {bookings.map((booking) => (
-              <Table.Tr key={booking.id}>
-                <Table.Td>{booking.guestName}</Table.Td>
-                <Table.Td>{booking.guestEmail}</Table.Td>
-                <Table.Td>
-                  <Text size="sm">{formatDt(booking.startsAt)}</Text>
-                  {booking.note && (
-                    <Text size="xs" c="dimmed" maw={240} truncate>
-                      {booking.note}
-                    </Text>
-                  )}
-                </Table.Td>
-                <Table.Td>
-                  <Badge color={booking.status === 'confirmed' ? 'green' : 'gray'}>
-                    {booking.status}
-                  </Badge>
-                </Table.Td>
-                <Table.Td>
-                  {booking.status === 'confirmed' && (
-                    <Button
-                      size="xs"
-                      color="red"
-                      variant="subtle"
-                      loading={cancelMutation.isPending}
-                      onClick={() => cancelMutation.mutate(booking.id)}
-                    >
-                      Cancel
-                    </Button>
-                  )}
-                </Table.Td>
-              </Table.Tr>
+              <Paper key={booking.id} withBorder p="sm" radius="sm">
+                <Group justify="space-between" align="flex-start" wrap="nowrap">
+                  <Stack gap={4} style={{ minWidth: 0 }}>
+                    <Text fw={500} truncate>{booking.guestName}</Text>
+                    <Text size="sm" c="dimmed" truncate>{booking.guestEmail}</Text>
+                    <Text size="sm">{formatDt(booking.startsAt)}</Text>
+                    {booking.note && (
+                      <Text size="xs" c="dimmed" truncate>{booking.note}</Text>
+                    )}
+                  </Stack>
+                  <Stack gap={6} align="flex-end" style={{ flexShrink: 0 }}>
+                    <Badge color={booking.status === 'confirmed' ? 'green' : 'gray'}>
+                      {booking.status}
+                    </Badge>
+                    {booking.status === 'confirmed' && (
+                      <Button
+                        size="xs"
+                        color="red"
+                        variant="subtle"
+                        loading={cancelMutation.isPending}
+                        onClick={() => cancelMutation.mutate(booking.id)}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </Stack>
+                </Group>
+              </Paper>
             ))}
-          </Table.Tbody>
-        </Table>
+          </Stack>
+        ) : (
+          <Table striped highlightOnHover>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Guest</Table.Th>
+                <Table.Th>Email</Table.Th>
+                <Table.Th>Time</Table.Th>
+                <Table.Th>Status</Table.Th>
+                <Table.Th />
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {bookings.map((booking) => (
+                <Table.Tr key={booking.id}>
+                  <Table.Td>{booking.guestName}</Table.Td>
+                  <Table.Td>{booking.guestEmail}</Table.Td>
+                  <Table.Td>
+                    <Text size="sm">{formatDt(booking.startsAt)}</Text>
+                    {booking.note && (
+                      <Text size="xs" c="dimmed" maw={240} truncate>
+                        {booking.note}
+                      </Text>
+                    )}
+                  </Table.Td>
+                  <Table.Td>
+                    <Badge color={booking.status === 'confirmed' ? 'green' : 'gray'}>
+                      {booking.status}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td>
+                    {booking.status === 'confirmed' && (
+                      <Button
+                        size="xs"
+                        color="red"
+                        variant="subtle"
+                        loading={cancelMutation.isPending}
+                        onClick={() => cancelMutation.mutate(booking.id)}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        )
       )}
     </Stack>
   );
