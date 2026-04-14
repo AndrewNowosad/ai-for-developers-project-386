@@ -1,0 +1,14 @@
+{
+  "name": "@booking/api-spec",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsp compile .",
+    "watch": "tsp compile . --watch"
+  },
+  "devDependencies": {
+    "@typespec/compiler": "^0.63.0",
+    "@typespec/http": "^0.63.0",
+    "@typespec/openapi3": "^0.63.0"
+  }
+}
