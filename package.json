@@ -17,7 +17,7 @@
   },
   "engines": {
     "node": ">=20",
-    "pnpm": ">=9"
+    "pnpm": ">=10"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["esbuild", "msw", "@prisma/client", "@prisma/engines", "prisma"]

@@ -1,12 +1,12 @@
 # ── Builder ──────────────────────────────────────────────────────────────────
 FROM node:24-alpine AS builder
 
-RUN npm install -g pnpm@9
+RUN npm install -g pnpm@10
 
 WORKDIR /build
 
 # Copy workspace manifests first for layer caching
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
 COPY apps/backend/package.json   ./apps/backend/
 COPY apps/frontend/package.json  ./apps/frontend/
 COPY packages/api-spec/package.json ./packages/api-spec/

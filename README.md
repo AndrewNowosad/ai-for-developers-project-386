@@ -110,7 +110,7 @@ Run `pnpm build` inside that package to emit `openapi.yaml`.
 ### Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (includes Compose)
-- pnpm 9+ (only for local development)
+- pnpm 10+ (only for local development)
 
 ### Run with Docker (recommended)
 
