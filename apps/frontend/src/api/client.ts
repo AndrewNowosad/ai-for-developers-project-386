@@ -66,6 +66,20 @@ export interface Calendar {
   createdAt: string;
 }
 
+export interface CalendarSummary {
+  id: number;
+  slug: string;
+  name: string;
+  timezone: string;
+  createdAt: string;
+}
+
+export interface CreateCalendarRequest {
+  name: string;
+  slug: string;
+  timezone: string;
+}
+
 export interface CalendarSettings {
   calendar: Calendar;
   availabilityRules: AvailabilityRule[];
@@ -116,6 +130,16 @@ export const api = {
 
   createBooking: (slug: string, data: CreateBookingRequest) =>
     request<BookingConfirmation>(`${BASE}/calendars/${slug}/bookings`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Owners
+  listCalendars: () =>
+    request<CalendarSummary[]>(`${BASE}/manage`),
+
+  createCalendar: (data: CreateCalendarRequest) =>
+    request<Calendar>(`${BASE}/manage`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),

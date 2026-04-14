@@ -84,6 +84,24 @@ model BookingConfirmation {
   booking: Booking;
 }
 
+model CalendarSummary {
+  id: int32;
+  slug: string;
+  name: string;
+  @doc("IANA timezone name, e.g. \"Europe/Moscow\".")
+  timezone: string;
+  createdAt: utcDateTime;
+}
+
+model CreateCalendarRequest {
+  @doc("Human-readable display name, e.g. \"Andrey Novosad\".")
+  name: string;
+  @doc("URL-friendly identifier, e.g. \"andrey-novosad\". Only lowercase letters, digits and hyphens, 3–50 chars.")
+  slug: string;
+  @doc("IANA timezone name, e.g. \"Europe/Moscow\".")
+  timezone: string;
+}
+
 model CalendarSettings {
   calendar: Calendar;
   availabilityRules: AvailabilityRule[];

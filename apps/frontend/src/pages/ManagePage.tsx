@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Alert,
+  Anchor,
   Badge,
   Button,
   Center,
@@ -24,7 +25,6 @@ import {
 import { TimeInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import dayjs from 'dayjs';
 import {
   api,
   type AvailabilityRule,
@@ -53,10 +53,10 @@ function weekdayLabel(n: number) {
 function AvailabilityPanel({
   slug,
   initialRules,
-}: {
+}: Readonly<{
   slug: string;
   initialRules: AvailabilityRule[];
-}) {
+}>) {
   const queryClient = useQueryClient();
   const [rules, setRules] = useState<AvailabilityRuleInput[]>(
     initialRules.map(({ weekdays, startTime, endTime }) => ({
@@ -69,7 +69,7 @@ function AvailabilityPanel({
 
   const addForm = useForm({
     initialValues: {
-      weekdays: ['1', '2', '3', '4', '5'] as string[],
+      weekdays: ['1', '2', '3', '4', '5'],
       startTime: '09:00',
       endTime: '17:00',
     },
@@ -91,6 +91,10 @@ function AvailabilityPanel({
     },
   });
 
+  const removeRule = (rule: AvailabilityRuleInput) => {
+    setRules((prev) => prev.filter((r) => r !== rule));
+  };
+
   const handleAdd = addForm.onSubmit((values) => {
     setRules((prev) => [
       ...prev,
@@ -110,8 +114,8 @@ function AvailabilityPanel({
         <Text c="dimmed">No rules defined. Add one to start accepting bookings.</Text>
       )}
 
-      {rules.map((rule, i) => (
-        <Paper key={i} withBorder p="sm" radius="sm">
+      {rules.map((rule) => (
+        <Paper key={`${rule.weekdays.join(',')}-${rule.startTime}-${rule.endTime}`} withBorder p="sm" radius="sm">
           <Group justify="space-between" align="flex-start">
             <Stack gap={4}>
               <Group gap={4}>
@@ -125,7 +129,7 @@ function AvailabilityPanel({
                 {rule.startTime} – {rule.endTime}
               </Text>
             </Stack>
-            <CloseButton aria-label="Remove rule" onClick={() => setRules((prev) => prev.filter((_, idx) => idx !== i))} />
+            <CloseButton aria-label="Remove rule" onClick={() => removeRule(rule)} />
           </Group>
         </Paper>
       ))}
@@ -173,10 +177,10 @@ function AvailabilityPanel({
 function SlotDurationsPanel({
   slug,
   initialDurations,
-}: {
+}: Readonly<{
   slug: string;
   initialDurations: SlotDuration[];
-}) {
+}>) {
   const queryClient = useQueryClient();
   const [newMinutes, setNewMinutes] = useState<number | string>(30);
 
@@ -259,7 +263,7 @@ function SlotDurationsPanel({
 
 // ─── Bookings Panel ───────────────────────────────────────────────────────────
 
-function BookingsPanel({ slug, timezone }: { slug: string; timezone: string }) {
+function BookingsPanel({ slug, timezone }: Readonly<{ slug: string; timezone: string }>) {
   const [statusFilter, setStatusFilter] = useState<BookingStatus | 'all'>('all');
   const queryClient = useQueryClient();
 
@@ -362,9 +366,11 @@ export default function ManagePage() {
 
   const { data: settings, isLoading, error } = useQuery({
     queryKey: ['manage', slug],
-    queryFn: () => api.getCalendarSettings(slug!),
+    queryFn: () => api.getCalendarSettings(slug ?? ''),
     enabled: !!slug,
   });
+
+  if (!slug) return null;
 
   if (isLoading) {
     return (
@@ -388,6 +394,9 @@ export default function ManagePage() {
     <Container size="lg" py="xl">
       <Stack gap="xl">
         <div>
+          <Anchor component={Link} to="/" size="sm" c="dimmed" mb="xs" display="inline-block">
+            ← All calendars
+          </Anchor>
           <Title order={1}>{settings.calendar.name}</Title>
           <Text size="sm" c="dimmed">
             Timezone: {settings.calendar.timezone}
@@ -402,15 +411,15 @@ export default function ManagePage() {
           </Tabs.List>
 
           <Tabs.Panel value="availability" pt="md">
-            <AvailabilityPanel slug={slug!} initialRules={settings.availabilityRules} />
+            <AvailabilityPanel slug={slug} initialRules={settings.availabilityRules} />
           </Tabs.Panel>
 
           <Tabs.Panel value="durations" pt="md">
-            <SlotDurationsPanel slug={slug!} initialDurations={settings.slotDurations} />
+            <SlotDurationsPanel slug={slug} initialDurations={settings.slotDurations} />
           </Tabs.Panel>
 
           <Tabs.Panel value="bookings" pt="md">
-            <BookingsPanel slug={slug!} timezone={settings.calendar.timezone} />
+            <BookingsPanel slug={slug} timezone={settings.calendar.timezone} />
           </Tabs.Panel>
         </Tabs>
       </Stack>

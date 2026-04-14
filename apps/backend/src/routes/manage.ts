@@ -38,9 +38,73 @@ function serializeBooking(b: {
   };
 }
 
+// ---- helpers -------------------------------------------------------
+
+function isValidTimezone(tz: string): boolean {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // ---- routes ------------------------------------------------------------
 
 export const manageRoutes: FastifyPluginAsync = async (fastify) => {
+  // GET /api/manage
+  fastify.get('/', async () => {
+    const calendars = await prisma.calendar.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    return calendars.map(serializeCalendar);
+  });
+
+  // POST /api/manage
+  fastify.post<{ Body: unknown }>('/', async (request, reply) => {
+    const bodySchema = z.object({
+      name: z.string().min(1, 'Name is required'),
+      slug: z
+        .string()
+        .min(3, 'Slug must be at least 3 characters')
+        .max(50, 'Slug must be at most 50 characters')
+        .regex(/^[a-z0-9-]+$/, 'Slug may only contain lowercase letters, digits and hyphens'),
+      timezone: z.string().min(1, 'Timezone is required'),
+    });
+
+    const parsed = bodySchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(422).send({
+        code: 422,
+        message: 'Validation error',
+        details: parsed.error.flatten().fieldErrors,
+      });
+    }
+
+    if (!isValidTimezone(parsed.data.timezone)) {
+      return reply.status(422).send({
+        code: 422,
+        message: 'Validation error',
+        details: { timezone: ['Invalid IANA timezone'] },
+      });
+    }
+
+    const existing = await prisma.calendar.findUnique({ where: { slug: parsed.data.slug } });
+    if (existing) {
+      return reply.status(409).send({ code: 409, message: 'Slug already taken' });
+    }
+
+    const calendar = await prisma.calendar.create({
+      data: {
+        name: parsed.data.name,
+        slug: parsed.data.slug,
+        timezone: parsed.data.timezone,
+      },
+    });
+
+    return reply.status(201).send(serializeCalendar(calendar));
+  });
+
   // GET /api/manage/:slug
   fastify.get<{ Params: { slug: string } }>('/:slug', async (request, reply) => {
     const { slug } = request.params;

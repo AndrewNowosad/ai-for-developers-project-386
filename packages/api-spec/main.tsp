@@ -6,7 +6,6 @@ using TypeSpec.Http;
 
 @service({
   title: "Booking App API",
-  version: "0.1.0",
 })
 @server("http://localhost:3000", "Local")
 namespace BookingApi;
@@ -42,6 +41,21 @@ interface PublicCalendars {
     @path slug: string,
     @body body: CreateBookingRequest,
   ): BookingConfirmation | NotFoundError | ConflictError | ValidationError;
+}
+
+// ---------------------------------------------------------------------------
+// Owners API — list and create calendars (auth added later)
+// ---------------------------------------------------------------------------
+
+@route("/api/manage")
+interface ManageOwners {
+  @get
+  @doc("List all calendars.")
+  list(): CalendarSummary[];
+
+  @post
+  @doc("Create a new calendar. The slug must be unique.")
+  create(@body body: CreateCalendarRequest): Calendar | ConflictError | ValidationError;
 }
 
 // ---------------------------------------------------------------------------

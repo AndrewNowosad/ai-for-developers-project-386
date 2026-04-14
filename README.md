@@ -34,6 +34,7 @@ The central entity, identified by a URL-friendly `slug`
 
 | URL | Who | Purpose |
 | --- | --- | --- |
+| `/` | Owner | List all calendars, create a new one |
 | `/:slug` | Guest | Browse availability, book a slot |
 | `/:slug/manage` | Owner | Manage settings and bookings |
 
@@ -74,6 +75,13 @@ Run `pnpm build` inside that package to emit `openapi.yaml`.
 | `GET` | `/api/calendars/:slug` | Calendar info and available slot durations |
 | `GET` | `/api/calendars/:slug/slots` | Free slots by duration and date range |
 | `POST` | `/api/calendars/:slug/bookings` | Book a slot |
+
+### Owners (no auth in current version)
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/api/manage` | List all calendars |
+| `POST` | `/api/manage` | Create a new calendar |
 
 ### Management (owner, no auth in current version)
 
