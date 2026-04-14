@@ -21,7 +21,8 @@ Monorepo managed with **pnpm workspaces**:
 | API contract | TypeSpec → OpenAPI 3.0 |
 | Backend | Fastify, Prisma ORM |
 | Frontend | React, Mantine UI, Vite |
-| Database | PostgreSQL |
+| Database | PostgreSQL 18 |
+| Container runtime | Docker Compose |
 | Package manager | pnpm workspaces |
 
 ## Domain Model
@@ -90,51 +91,58 @@ Run `pnpm build` inside that package to emit `openapi.yaml`.
 
 ### Prerequisites
 
-- Node.js 20+
-- pnpm 9+
-- PostgreSQL 14+ (for the `btree_gist` extension needed by the booking overlap constraint)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (includes Compose)
+- pnpm 9+ (only for local development)
 
-### Install dependencies
+### Run with Docker (recommended)
+
+Builds all images and starts the full stack (PostgreSQL + migrations + backend + frontend):
+
+```sh
+pnpm docker:dev
+```
+
+| URL | Service |
+| --- | --- |
+| http://localhost | Frontend (React SPA) |
+| http://localhost/api | Backend API (proxied by nginx) |
+| localhost:3000 | Backend API (direct) |
+| localhost:5432 | PostgreSQL |
+
+Seed a demo calendar (slug `demo`, Mon–Fri 09–17, 15 & 30 min slots):
+
+```sh
+pnpm docker:seed
+```
+
+Other useful commands:
+
+```sh
+pnpm docker:logs       # tail logs from all services
+pnpm docker:down       # stop all containers
+pnpm docker:clean      # stop + delete database volume (full reset)
+pnpm docker:build-fresh  # rebuild images without cache
+```
+
+### Local development (without Docker)
+
+You still need a running PostgreSQL instance.
 
 ```sh
 pnpm install
-```
 
-### Generate OpenAPI spec
+# Generate OpenAPI spec
+cd packages/api-spec && pnpm build
 
-```sh
-cd packages/api-spec
-pnpm build
-# outputs packages/api-spec/openapi.yaml
-```
-
-### Run the backend
-
-```sh
+# Backend
 cd apps/backend
-
-# 1. Copy and fill in the environment variables
-cp .env.example .env
-# Edit .env — set DATABASE_URL to your PostgreSQL connection string
-
-# 2. Run migrations (creates tables + overlap EXCLUDE constraint)
+cp .env.example .env   # set DATABASE_URL
 pnpm db:migrate
-
-# 3. Seed a demo calendar (slug: "demo", Mon–Fri 09–17 + Sat 10–14, 15 & 30 min slots)
 pnpm db:seed
+pnpm dev               # http://localhost:3000
 
-# 4. Start the dev server (http://localhost:3000)
-pnpm dev
-```
-
-### Run the frontend
-
-```sh
+# Frontend (in a separate terminal)
 cd apps/frontend
-
-# Against the real backend
-pnpm dev
-
-# Against MSW mocks (no backend needed)
-pnpm dev:mock
+pnpm dev               # against real backend
+pnpm dev:mock          # against MSW mocks (no backend needed)
 ```

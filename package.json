@@ -3,7 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "pnpm -r build"
+    "build": "pnpm -r build",
+    "docker:build": "docker compose build",
+    "docker:build-fresh": "docker compose build --no-cache",
+    "docker:up": "docker compose up -d",
+    "docker:dev": "docker compose build && docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:restart": "docker compose restart",
+    "docker:clean": "docker compose down -v",
+    "docker:seed": "docker compose run --rm -w /build/apps/backend --entrypoint \"\" migrate ./node_modules/.bin/tsx src/seed.ts"
   },
   "engines": {
     "node": ">=20",
