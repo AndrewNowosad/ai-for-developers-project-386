@@ -3,6 +3,13 @@
 A web application for scheduling meetings. Calendar owners share their
 availability; guests book time slots without creating an account.
 
+## Live Demo
+
+| Service | URL |
+| --- | --- |
+| Frontend | https://booking-frontend-wthl.onrender.com |
+| Backend API | https://booking-backend-0fxk.onrender.com/api |
+
 ## Architecture
 
 Monorepo managed with **pnpm workspaces**:
@@ -22,8 +29,9 @@ Monorepo managed with **pnpm workspaces**:
 | API contract | TypeSpec → OpenAPI 3.0 |
 | Backend | Fastify, Prisma ORM |
 | Frontend | React, Mantine UI, Vite |
-| Database | PostgreSQL 18 |
+| Database | PostgreSQL 18 (Docker) / 16 (Render) |
 | Container runtime | Docker Compose |
+| Hosting | Render.com |
 | E2E tests | Playwright |
 | Package manager | pnpm workspaces |
 
@@ -156,6 +164,22 @@ cd apps/frontend
 pnpm dev               # against real backend
 pnpm dev:mock          # against MSW mocks (no backend needed)
 ```
+
+## Deployment
+
+The app is deployed on [Render.com](https://render.com) and defined in `render.yaml`:
+
+| Service | Type | Description |
+| --- | --- | --- |
+| `booking-db` | PostgreSQL 16 (free) | Managed database, Frankfurt region (max available on Render free tier) |
+| `booking-backend` | Node.js web service | Fastify API, auto-deploys on push to `main` |
+| `booking-frontend` | Static site | React SPA served via CDN |
+
+To deploy your own instance:
+
+1. Fork the repository
+2. Create a new [Blueprint](https://dashboard.render.com/blueprints) on Render and connect your fork — Render will read `render.yaml` and provision all three services automatically
+3. Set `DATABASE_URL` on the `booking-backend` service using the **Internal Database URL** from the `booking-db` dashboard
 
 ## End-to-end Tests
 
