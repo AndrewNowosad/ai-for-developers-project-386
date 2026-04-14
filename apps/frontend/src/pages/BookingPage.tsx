@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Alert,
   Button,
@@ -10,6 +10,7 @@ import {
   Grid,
   Group,
   Loader,
+  SimpleGrid,
   Modal,
   Paper,
   Stack,
@@ -22,18 +23,19 @@ import { DatePicker } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import dayjs from 'dayjs';
-import { api, type FreeSlot, ApiError } from '../api/client';
+import { api, type Slot, ApiError } from '../api/client';
 
 export default function BookingPage() {
-  const { slug } = useParams<{ slug: string }>();
+  const queryClient = useQueryClient();
+  const { slug } = useParams() as { slug: string };
   const [duration, setDuration] = useState<number | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
-  const [selectedSlot, setSelectedSlot] = useState<FreeSlot | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [confirmed, setConfirmed] = useState(false);
 
   const { data: calendar, isLoading, error } = useQuery({
     queryKey: ['calendar', slug],
-    queryFn: () => api.getCalendar(slug!),
+    queryFn: () => api.getCalendar(slug),
     enabled: !!slug,
   });
 
@@ -47,7 +49,7 @@ export default function BookingPage() {
 
   const { data: slots, isFetching: slotsLoading } = useQuery({
     queryKey: ['slots', slug, duration, dateStr],
-    queryFn: () => api.getSlots(slug!, duration!, dateStr, dateStr),
+    queryFn: () => api.getSlots(slug, duration!, dateStr, dateStr),
     enabled: !!slug && !!duration && !!dateStr,
   });
 
@@ -62,7 +64,7 @@ export default function BookingPage() {
 
   const bookMutation = useMutation({
     mutationFn: (values: typeof form.values) =>
-      api.createBooking(slug!, {
+      api.createBooking(slug, {
         startsAt: selectedSlot!.startsAt,
         endsAt: selectedSlot!.endsAt,
         guestName: values.guestName,
@@ -73,6 +75,7 @@ export default function BookingPage() {
       setSelectedSlot(null);
       setConfirmed(true);
       form.reset();
+      queryClient.invalidateQueries({ queryKey: ['slots', slug, duration, dateStr] });
     },
     onError: (err) => {
       if (err instanceof ApiError && err.status === 409) {
@@ -183,18 +186,20 @@ export default function BookingPage() {
               )}
 
               {!slotsLoading && slots && slots.length > 0 && (
-                <Group gap="xs">
+                <SimpleGrid cols={{ base: 4, sm: 6 }} spacing="xs">
                   {slots.map((slot) => (
                     <Button
                       key={slot.startsAt}
                       variant="outline"
                       size="sm"
+                      color={slot.available ? undefined : 'gray'}
+                      disabled={!slot.available}
                       onClick={() => setSelectedSlot(slot)}
                     >
                       {formatTime(slot.startsAt)}
                     </Button>
                   ))}
-                </Group>
+                </SimpleGrid>
               )}
             </Stack>
           </Grid.Col>

@@ -23,7 +23,8 @@ interface PublicCalendars {
   @get
   @route("/slots")
   @doc("""
-    Return free time slots for the given duration within a date range.
+    Return all time slots for the given duration within a date range.
+    Each slot includes an `available` flag indicating whether it can still be booked.
     Both `from` and `to` are ISO 8601 dates (YYYY-MM-DD) in the calendar's timezone.
     Defaults to the next 14 days when omitted.
   """)
@@ -32,7 +33,7 @@ interface PublicCalendars {
     @query @doc("Slot duration in minutes.") duration: int32,
     @query @doc("Start of the range, e.g. 2026-04-14.") from?: string,
     @query @doc("End of the range, e.g. 2026-04-28.") to?: string,
-  ): FreeSlot[] | NotFoundError | ValidationError;
+  ): Slot[] | NotFoundError | ValidationError;
 
   @post
   @route("/bookings")

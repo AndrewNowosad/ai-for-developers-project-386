@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import type {
   CalendarPublicView,
-  FreeSlot,
+  Slot,
   CalendarSettings,
   Booking,
   BookingConfirmation,
@@ -36,16 +36,18 @@ export const mockSettings: CalendarSettings = {
   ],
 };
 
-export const mockSlots: FreeSlot[] = [
+export const mockSlots: Slot[] = [
   {
     startsAt: '2026-04-14T09:00:00Z',
     endsAt: '2026-04-14T09:30:00Z',
     durationMinutes: 30,
+    available: false,
   },
   {
     startsAt: '2026-04-14T10:00:00Z',
     endsAt: '2026-04-14T10:30:00Z',
     durationMinutes: 30,
+    available: true,
   },
 ];
 

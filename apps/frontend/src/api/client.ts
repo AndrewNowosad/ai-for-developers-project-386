@@ -8,10 +8,11 @@ export interface CalendarPublicView {
   slotDurations: number[];
 }
 
-export interface FreeSlot {
+export interface Slot {
   startsAt: string;
   endsAt: string;
   durationMinutes: number;
+  available: boolean;
 }
 
 export interface CreateBookingRequest {
@@ -107,8 +108,11 @@ const BASE = '/api';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers: {
+      ...(options?.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      ...options?.headers,
+    },
   });
   if (res.status === 204) return undefined as T;
   const body = await res.json();
@@ -125,7 +129,7 @@ export const api = {
     const params = new URLSearchParams({ duration: String(duration) });
     if (from) params.set('from', from);
     if (to) params.set('to', to);
-    return request<FreeSlot[]>(`${BASE}/calendars/${slug}/slots?${params}`);
+    return request<Slot[]>(`${BASE}/calendars/${slug}/slots?${params}`);
   },
 
   createBooking: (slug: string, data: CreateBookingRequest) =>

@@ -11,14 +11,15 @@ interface BookingWindow {
   endsAt: Date;
 }
 
-export interface FreeSlot {
+export interface Slot {
   startsAt: string;
   endsAt: string;
   durationMinutes: number;
+  available: boolean;
 }
 
 /**
- * Generate free time slots for a given date range in the calendar's timezone.
+ * Generate time slots for a given date range in the calendar's timezone.
  *
  * @param rules       Availability rules (weekdays + time range).
  * @param bookings    Existing confirmed bookings to exclude.
@@ -27,14 +28,14 @@ export interface FreeSlot {
  * @param toDate      End date, "YYYY-MM-DD", in the calendar's timezone.
  * @param timezone    IANA timezone name, e.g. "Europe/Moscow".
  */
-export function generateFreeSlots(
+export function generateSlots(
   rules: Rule[],
   bookings: BookingWindow[],
   duration: number,
   fromDate: string,
   toDate: string,
   timezone: string,
-): FreeSlot[] {
+): Slot[] {
   // Pre-compute booked intervals as ms timestamps for fast overlap checks
   const bookedMs = bookings.map((b) => ({
     start: b.startsAt.getTime(),
@@ -42,7 +43,7 @@ export function generateFreeSlots(
   }));
 
   const nowMs = Date.now();
-  const slots: FreeSlot[] = [];
+  const slots: Slot[] = [];
 
   let day = DateTime.fromISO(fromDate, { zone: timezone }).startOf('day');
   const lastDay = DateTime.fromISO(toDate, { zone: timezone }).startOf('day');
@@ -68,8 +69,8 @@ function slotsForRule(
   duration: number,
   nowMs: number,
   bookedMs: BookedMs[],
-): FreeSlot[] {
-  const slots: FreeSlot[] = [];
+): Slot[] {
+  const slots: Slot[] = [];
   const [sh, sm] = rule.startTime.split(':').map(Number);
   const [eh, em] = rule.endTime.split(':').map(Number);
 
@@ -83,13 +84,12 @@ function slotsForRule(
     const isFree =
       endMs > nowMs && !bookedMs.some((b) => startMs < b.end && endMs > b.start);
 
-    if (isFree) {
-      slots.push({
-        startsAt: slotStart.toUTC().toISO()!,
-        endsAt: slotEnd.toUTC().toISO()!,
-        durationMinutes: duration,
-      });
-    }
+    slots.push({
+      startsAt: slotStart.toUTC().toISO()!,
+      endsAt: slotEnd.toUTC().toISO()!,
+      durationMinutes: duration,
+      available: isFree,
+    });
 
     slotStart = slotEnd;
     slotEnd = slotStart.plus({ minutes: duration });

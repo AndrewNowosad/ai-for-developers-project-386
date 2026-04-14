@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { DateTime } from 'luxon';
 import { prisma } from '../db.js';
-import { generateFreeSlots } from '../lib/slots.js';
+import { generateSlots } from '../lib/slots.js';
 
 // ---- serialisers -------------------------------------------------------
 
@@ -143,7 +143,7 @@ export const publicRoutes: FastifyPluginAsync = async (fastify) => {
       select: { startsAt: true, endsAt: true },
     });
 
-    return generateFreeSlots(
+    return generateSlots(
       calendar.availabilityRules,
       bookings,
       duration,

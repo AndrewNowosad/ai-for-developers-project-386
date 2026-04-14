@@ -65,10 +65,12 @@ model CalendarPublicView {
   slotDurations: int32[];
 }
 
-model FreeSlot {
+model Slot {
   startsAt: utcDateTime;
   endsAt: utcDateTime;
   durationMinutes: int32;
+  @doc("Whether the slot is still available for booking.")
+  available: boolean;
 }
 
 model CreateBookingRequest {
