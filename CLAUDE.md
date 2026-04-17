@@ -136,3 +136,40 @@ hand-edit existing migration SQL.
 (backend), and a static site (frontend). Backend build on Render runs
 `pnpm deploy` (flat node_modules), generates Prisma client, then runs
 `db:deploy`. All three are auto-deployed on push to `main`.
+
+## GitHub Claude Agent
+
+Three GitHub Actions workflows power an AI agent that responds to `@claude`
+mentions. All require the `CLAUDE_AGENT_ENABLED` repo variable set to `true`
+(Settings → Secrets and variables → Actions → Variables).
+
+| Workflow | Trigger | What it does |
+| --- | --- | --- |
+| `claude-issue-response.yml` | `@claude` in issue body/comment | Answers questions, explores codebase |
+| `claude-fix.yml` | `@claude fix` in issue/PR comment | Opens a `claude-fix/…` branch + PR |
+| `claude-pr-review.yml` | PR opened/reopened or `@claude review` | Posts a code review |
+
+**Never touch `.github/workflows/hexlet-check.yml`** — it is managed externally.
+
+**Kill switch:** Delete the `ANTHROPIC_API_KEY` repo secret or set
+`CLAUDE_AGENT_ENABLED` to any value other than `true` to disable all three
+workflows instantly.
+
+**`@claude fix` note:** If a fix requires a new Prisma migration, Claude will
+note this in the PR description — `pnpm db:migrate` is interactive and cannot
+run in CI. Create the migration manually after merging.
+
+### Code Review Checklist
+
+When reviewing PRs (mirrors `custom_instructions` in `claude-pr-review.yml`):
+
+- Zod validation on every route body/query params
+- No Prisma queries inside loops (use `findMany` with `in` or `$transaction`)
+- TypeSpec updated before route changes; generated `openapi.yaml` committed
+- Mantine components in frontend (not raw HTML form elements)
+- React Query for all data fetching (not `useEffect` + `fetch`)
+- MSW mocks updated when API shape changes
+- No `any` casts without explanation (TypeScript strict mode)
+- No hand-editing of existing Prisma migration SQL
+- No hardcoded secrets or `DATABASE_URL` in source
+- New env vars reflected in `render.yaml` and `docker-compose.yml`

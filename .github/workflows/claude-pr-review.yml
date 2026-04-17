@@ -1,0 +1,88 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  review:
+    if: |
+      vars.CLAUDE_AGENT_ENABLED == 'true' &&
+      (
+        (
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.draft == false &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.actor != 'dependabot[bot]' &&
+          github.actor != 'github-actions[bot]'
+        ) ||
+        (
+          github.event_name == 'issue_comment' &&
+          github.event.issue.pull_request != null &&
+          contains(github.event.comment.body, '@claude review') &&
+          github.event.comment.user.type != 'Bot' &&
+          github.event.comment.author_association != 'NONE'
+        )
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          trigger_phrase: "@claude review"
+          custom_instructions: |
+            You are reviewing a pull request for a pnpm monorepo booking app.
+            See CLAUDE.md in the repo root for the full project context. Apply
+            the following review standards specific to this stack:
+
+            BACKEND (apps/backend — Fastify + Prisma + TypeScript):
+            - Zod validation must be present on every route that accepts a body or query params.
+            - Prisma queries must not be issued inside loops; use findMany with
+              `where: { id: { in: [...] } }` or $transaction batching instead.
+            - New routes must have a matching TypeSpec declaration in packages/api-spec/
+              and the generated tsp-output/@typespec/openapi3/openapi.yaml must be committed.
+            - Never hand-edit existing migration SQL under apps/backend/prisma/migrations/.
+            - The btree_gist extension and EXCLUDE constraint on bookings must not be removed.
+            - Error responses must follow the shape { code, message } (and optionally details for 422).
+            - ESM-only: all internal imports must use the .js extension in compiled output.
+
+            FRONTEND (apps/frontend — React 18 + Mantine 7 + React Query 5 + Vite):
+            - UI components must come from @mantine/core or @mantine/dates; avoid raw HTML form elements.
+            - Data fetching must go through React Query hooks in src/api/client.ts, not useEffect + fetch.
+            - MSW mocks in src/mocks/ must be updated when API contracts change.
+            - dayjs is the date library; do not introduce moment or date-fns.
+            - TypeScript strict mode is enabled; do not add `any` casts without explanation.
+
+            API CONTRACT (packages/api-spec — TypeSpec):
+            - TypeSpec is the source of truth. If routes changed, TypeSpec must be updated first.
+            - The generated tsp-output/@typespec/openapi3/openapi.yaml must be committed
+              alongside TypeSpec changes.
+
+            E2E (apps/e2e — Playwright):
+            - Tests run with 1 worker to avoid DB race conditions; do not change the worker count.
+            - global-setup.ts seeds state; tests must not depend on DB state from other tests.
+
+            GENERAL:
+            - pnpm is the only package manager; do not add npm or yarn lock files.
+            - Node >=20 and pnpm >=10 are required per package.json engines.
+            - Never touch .github/workflows/hexlet-check.yml.
+            - Flag any hardcoded secrets, credentials, or DATABASE_URL values in source.
+            - Note if new env vars are introduced without a corresponding entry in
+              render.yaml or docker-compose.yml.
+        env:
+          ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
