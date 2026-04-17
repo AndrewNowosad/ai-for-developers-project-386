@@ -39,6 +39,7 @@ jobs:
       - uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-sonnet-4-6
           github_token: ${{ secrets.GITHUB_TOKEN }}
           trigger_phrase: "@claude"
           custom_instructions: |

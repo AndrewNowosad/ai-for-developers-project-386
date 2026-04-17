@@ -23,9 +23,7 @@ jobs:
         contains(github.event.comment.body, 'исправь')
       ) &&
       github.event.comment.user.type != 'Bot' &&
-      github.event.comment.author_association != 'NONE' &&
-      (github.event.issue.pull_request == null ||
-       github.event.pull_request.head.repo.full_name == github.repository)
+      github.event.comment.author_association != 'NONE'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -57,6 +55,7 @@ jobs:
       - uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-sonnet-4-6
           github_token: ${{ secrets.GITHUB_TOKEN }}
           trigger_phrase: "@claude"
           custom_instructions: |
