@@ -58,7 +58,19 @@ export function generateSlots(
     day = day.plus({ days: 1 });
   }
 
-  return slots;
+  // Deduplicate slots by start time and sort chronologically
+  const uniqueSlots = new Map<string, Slot>();
+  for (const slot of slots) {
+    const existing = uniqueSlots.get(slot.startsAt);
+    if (!existing || (slot.available && !existing.available)) {
+      // Keep the slot if it's new, or if it's available and the existing one isn't
+      uniqueSlots.set(slot.startsAt, slot);
+    }
+  }
+
+  return Array.from(uniqueSlots.values()).sort(
+    (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
+  );
 }
 
 type BookedMs = { start: number; end: number };
