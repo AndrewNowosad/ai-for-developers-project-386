@@ -1,0 +1,51 @@
+name: Claude Issue Response
+
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+concurrency:
+  group: claude-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  respond:
+    if: |
+      vars.CLAUDE_AGENT_ENABLED == 'true' &&
+      (
+        (github.event_name == 'issues' && contains(github.event.issue.body, '@claude')) ||
+        (github.event_name == 'issue_comment' &&
+         contains(github.event.comment.body, '@claude') &&
+         github.event.comment.user.type != 'Bot' &&
+         !contains(github.event.comment.body, 'fix') &&
+         !contains(github.event.comment.body, 'фикс') &&
+         !contains(github.event.comment.body, 'patch') &&
+         !contains(github.event.comment.body, 'исправь'))
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          trigger_phrase: "@claude"
+          custom_instructions: |
+            You are answering a question or triaging an issue in a GitHub repository.
+            Your job is to provide information, analysis, and guidance only.
+            DO NOT make any code changes, commits, or pushes.
+            DO NOT create branches or pull requests.
+            Read the codebase to understand the issue and write a helpful response.
+        env:
+          ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}

@@ -1,0 +1,75 @@
+name: Claude Auto-Fix
+
+on:
+  issue_comment:
+    types: [created]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+concurrency:
+  group: claude-fix-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    if: |
+      vars.CLAUDE_AGENT_ENABLED == 'true' &&
+      contains(github.event.comment.body, '@claude') &&
+      (
+        contains(github.event.comment.body, 'fix') ||
+        contains(github.event.comment.body, 'фикс') ||
+        contains(github.event.comment.body, 'patch') ||
+        contains(github.event.comment.body, 'исправь')
+      ) &&
+      github.event.comment.user.type != 'Bot' &&
+      github.event.comment.author_association != 'NONE' &&
+      (github.event.issue.pull_request == null ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure git credentials
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+
+      - uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          trigger_phrase: "@claude"
+          custom_instructions: |
+            You are fixing a bug in a GitHub repository. Follow these steps exactly:
+            1. Create a new branch: git checkout -b claude-fix/<issue-number>-<short-slug>
+            2. Analyze the issue and make the minimal necessary code changes.
+            3. Build check: run `pnpm --filter <affected-package> build` to verify TypeScript compiles.
+            4. Commit: git add -A && git commit -m "fix: <description>"
+            5. Push: git push origin HEAD
+            6. Open a PR: gh pr create --title "fix: <description>" --body "Closes #<issue-number>\n\n<summary>"
+            If a Prisma migration is required, note it in the PR body instead of
+            running `pnpm db:migrate` (it is interactive and cannot run in CI).
+            Never touch .github/workflows/hexlet-check.yml.
+        env:
+          ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
